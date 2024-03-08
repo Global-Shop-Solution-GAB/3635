@@ -1,0 +1,72 @@
+Program.Sub.ScreenSU.Start
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'RAN 03-04-16
+'Quote 7479 carrying over comments from original quote
+
+'Complete Prototype Services,Inc.
+
+
+
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+
+V.Local.sQuoteF.Declare(String)
+V.Local.sQuoteT.Declare(String)
+V.Local.sUser.Declare(String)
+V.Local.sSQL.Declare(String)
+
+F.Intrinsic.Control.If(V.Caller.Hook,=,"35015")
+	F.ODBC.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+	V.Local.sUser.Set(V.Caller.User)
+	'original quote number
+	V.Local.sQuoteF.Set(Variable.Passed.000001)
+	'new quote number
+	V.Local.sQuoteT.Set(Variable.Passed.000003)
+
+	F.Intrinsic.String.LPad(V.Local.sQuoteF,"0",7,V.Local.sQuoteF)
+	F.Intrinsic.String.LPad(V.Local.sQuoteT,"0",7,V.Local.sQuoteT)
+
+	F.Intrinsic.String.Build("Select QUOTE, TEXT1 From GAB_QTEHDR_COMMENT Where QUOTE = '{0}'", V.Local.sQuoteF, V.Local.sSQL)
+	F.ODBC.Connection!con.OpenLocalRecordsetRO("rst", V.Local.sSQL)
+	Function.Intrinsic.Control.If(V.ODBC.con!rst.EOF, =, False)
+	' open RW record set
+		F.ODBC.Connection!con.OpenLocalRecordsetRW("rstAdd", "Select * From GAB_QTEHDR_COMMENT")
+		F.ODBC.con!rstAdd.AddNew
+		F.ODBC.con!rstAdd.Set!QUOTE(V.Local.sQuoteT)
+		F.ODBC.con!rstAdd.Set!GS_USER(V.Local.sUser.Trim)
+		F.ODBC.con!rstAdd.Set!TEXT1(V.ODBC.con!rst.FieldValTrim!TEXT1)
+		F.ODBC.con!rstAdd.Update
+		F.ODBC.con!rstAdd.Close
+		F.ODBC.con!rst.Close
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+
+
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3635_CopyComm.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Main.End
+
+Program.Sub.Comments.Start
+${$0$}$GCG_CopyComm$}$RAN$}$3/4/2016$}$False
+Program.Sub.Comments.End
+
